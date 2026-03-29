@@ -1,29 +1,17 @@
 import { NextResponse } from "next/server";
 
 import {
-  getTransactionById,
-  updateTransactionStatus,
-  wait,
-} from "@/data/mock-backend";
-import { transactionStatusSchema } from "@/lib/core";
+  getTransactionByIdPayload,
+  updateTransactionPayload,
+} from "@/lib/transactions-server";
 
 export async function GET(
   _request: Request,
   context: RouteContext<"/api/transactions/[id]">,
 ) {
   const { id } = await context.params;
-  const transaction = getTransactionById(id);
-
-  await wait(250);
-
-  if (!transaction) {
-    return NextResponse.json(
-      { message: "Transaction not found." },
-      { status: 404 },
-    );
-  }
-
-  return NextResponse.json({ data: transaction });
+  const result = await getTransactionByIdPayload(id);
+  return NextResponse.json(result.body, { status: result.status });
 }
 
 export async function PATCH(
@@ -31,25 +19,6 @@ export async function PATCH(
   context: RouteContext<"/api/transactions/[id]">,
 ) {
   const { id } = await context.params;
-  const payload = transactionStatusSchema.safeParse(await request.json());
-
-  await wait(300);
-
-  if (!payload.success) {
-    return NextResponse.json(
-      { message: "Please choose a valid transaction status." },
-      { status: 400 },
-    );
-  }
-
-  const transaction = updateTransactionStatus(id, payload.data.status);
-
-  if (!transaction) {
-    return NextResponse.json(
-      { message: "Transaction not found." },
-      { status: 404 },
-    );
-  }
-
-  return NextResponse.json({ data: transaction });
+  const result = await updateTransactionPayload(id, await request.json());
+  return NextResponse.json(result.body, { status: result.status });
 }

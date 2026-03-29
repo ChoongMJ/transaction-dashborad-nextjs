@@ -1,10 +1,9 @@
 "use client";
 
 import { ArrowRight, ArrowUpDown, RotateCcw } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
-import { formatCurrency, formatDateTime } from "@/lib/core";
-import { useTransactions } from "@/features/transactions/hooks/use-transactions";
 import {
   DataTable,
   EmptyState,
@@ -14,9 +13,11 @@ import {
   SearchInput,
 } from "@/components/shared/common";
 import { Button, Card, CardContent, Select } from "@/components/ui/primitives";
-import { transactionStatusOptions } from "@/lib/constants";
-import type { TransactionListParams, TransactionsListResponse } from "@/types/transaction";
 import { StatusBadge } from "@/features/transactions/components/status-badge";
+import { useTransactions } from "@/features/transactions/hooks/use-transactions";
+import { transactionStatusOptions } from "@/lib/constants";
+import { formatCurrency, formatDateTime } from "@/lib/core";
+import type { TransactionListParams, TransactionsListResponse } from "@/types/transaction";
 
 const pageSizeOptions = [
   { label: "10 rows", value: "10" },
@@ -34,35 +35,106 @@ const sortOrderOptions = [
   { label: "Ascending", value: "asc" },
 ];
 
-export function TransactionsPageClient({
-  initialParams,
+const allowedStatuses = new Set<string>(
+  transactionStatusOptions.map((option) => option.value),
+);
+
+type UrlParamKey = "search" | "status" | "page" | "sort" | "order";
+
+function getPageValue(rawValue: string | null) {
+  const parsedValue = Number(rawValue);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    return 1;
+  }
+
+  return parsedValue;
+}
+
+function getStatusValue(
+  rawValue: string | null,
+): NonNullable<TransactionListParams["status"]> {
+  if (rawValue && allowedStatuses.has(rawValue)) {
+    return rawValue as NonNullable<TransactionListParams["status"]>;
+  }
+
+  return "all";
+}
+
+function getSortValue(rawValue: string | null): "createdAt" | "amount" {
+  return rawValue === "amount" ? "amount" : "createdAt";
+}
+
+function getOrderValue(rawValue: string | null): "asc" | "desc" {
+  return rawValue === "asc" ? "asc" : "desc";
+}
+
+function TransactionsSearchField({
+  initialSearch,
+  onSearchChange,
 }: {
-  initialParams: TransactionListParams;
+  initialSearch: string;
+  onSearchChange: (value: string) => void;
 }) {
-  const [search, setSearch] = useState(initialParams.search ?? "");
-  const deferredSearch = useDeferredValue(search);
-  const [page, setPage] = useState(initialParams.page ?? 1);
-  const [pageSize, setPageSize] = useState(initialParams.pageSize ?? 10);
-  const [status, setStatus] = useState<NonNullable<TransactionListParams["status"]>>(
-    initialParams.status ?? "all",
-  );
-  const [sortBy, setSortBy] = useState<"createdAt" | "amount">(
-    initialParams.sortBy ?? "createdAt",
-  );
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-    initialParams.sortOrder ?? "desc",
-  );
+  const [value, setValue] = useState(initialSearch);
+  const deferredValue = useDeferredValue(value);
+
+  useEffect(() => {
+    if (deferredValue !== initialSearch) {
+      onSearchChange(deferredValue);
+    }
+  }, [deferredValue, initialSearch, onSearchChange]);
+
+  return <SearchInput value={value} onChange={setValue} />;
+}
+
+export function TransactionsPageClient() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const urlSearch = searchParams.get("search") ?? "";
+  const page = getPageValue(searchParams.get("page"));
+  const status = getStatusValue(searchParams.get("status"));
+  const sortBy = getSortValue(searchParams.get("sort"));
+  const sortOrder = getOrderValue(searchParams.get("order"));
+
+  const [pageSize, setPageSize] = useState(10);
+
+  function updateUrl(
+    updates: Partial<Record<UrlParamKey, string | null>>,
+    mode: "push" | "replace" = "push",
+  ) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value || (key === "page" && value === "1")) {
+        nextParams.delete(key);
+      } else {
+        nextParams.set(key, value);
+      }
+    }
+
+    const nextQuery = nextParams.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+    if (mode === "replace") {
+      window.history.replaceState(null, "", nextUrl);
+      return;
+    }
+
+    window.history.pushState(null, "", nextUrl);
+  }
 
   const filters = useMemo(
     () => ({
       page,
       pageSize,
-      search: deferredSearch,
+      search: urlSearch,
       status,
       sortBy,
       sortOrder,
     }),
-    [deferredSearch, page, pageSize, sortBy, sortOrder, status],
+    [page, pageSize, sortBy, sortOrder, status, urlSearch],
   );
 
   const query = useTransactions(filters);
@@ -129,23 +201,39 @@ export function TransactionsPageClient({
   );
 
   function resetFilters() {
-    setSearch("");
-    setPage(1);
     setPageSize(10);
-    setStatus("all");
-    setSortBy("createdAt");
-    setSortOrder("desc");
+    updateUrl({
+      search: null,
+      status: null,
+      page: null,
+      sort: null,
+      order: null,
+    });
   }
 
   return (
     <div className="space-y-4">
       <FilterBar>
-        <SearchInput value={search} onChange={setSearch} />
+        <TransactionsSearchField
+          key={urlSearch}
+          initialSearch={urlSearch}
+          onSearchChange={(value) => {
+            updateUrl(
+              {
+                search: value || null,
+                page: "1",
+              },
+              "replace",
+            );
+          }}
+        />
         <Select
           value={status}
           onValueChange={(value) => {
-            setPage(1);
-            setStatus(value as NonNullable<TransactionListParams["status"]>);
+            updateUrl({
+              status: value === "all" ? null : value,
+              page: "1",
+            });
           }}
           options={transactionStatusOptions.map((option) => ({
             label: option.label,
@@ -155,8 +243,10 @@ export function TransactionsPageClient({
         <Select
           value={sortBy}
           onValueChange={(value) => {
-            setPage(1);
-            setSortBy(value as "createdAt" | "amount");
+            updateUrl({
+              sort: value,
+              page: "1",
+            });
           }}
           options={sortByOptions}
         />
@@ -164,8 +254,10 @@ export function TransactionsPageClient({
           <Select
             value={sortOrder}
             onValueChange={(value) => {
-              setPage(1);
-              setSortOrder(value as "asc" | "desc");
+              updateUrl({
+                order: value,
+                page: "1",
+              });
             }}
             options={sortOrderOptions}
             className="flex-1"
@@ -216,8 +308,10 @@ export function TransactionsPageClient({
                 <Select
                   value={String(pageSize)}
                   onValueChange={(value) => {
-                    setPage(1);
                     setPageSize(Number(value));
+                    updateUrl({
+                      page: "1",
+                    });
                   }}
                   options={pageSizeOptions}
                   className="w-[120px]"
@@ -251,7 +345,11 @@ export function TransactionsPageClient({
                 <Button
                   variant="outline"
                   disabled={query.data.meta.page <= 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  onClick={() =>
+                    updateUrl({
+                      page: String(Math.max(1, query.data.meta.page - 1)),
+                    })
+                  }
                 >
                   Previous
                 </Button>
@@ -259,9 +357,14 @@ export function TransactionsPageClient({
                   variant="outline"
                   disabled={query.data.meta.page >= query.data.meta.totalPages}
                   onClick={() =>
-                    setPage((current) =>
-                      Math.min(query.data?.meta.totalPages ?? current, current + 1),
-                    )
+                    updateUrl({
+                      page: String(
+                        Math.min(
+                          query.data.meta.totalPages,
+                          query.data.meta.page + 1,
+                        ),
+                      ),
+                    })
                   }
                 >
                   Next

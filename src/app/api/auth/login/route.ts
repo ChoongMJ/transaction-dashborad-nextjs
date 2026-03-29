@@ -1,34 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { createSession, demoCredentials, mockUser, wait } from "@/data/mock-backend";
-import { loginSchema } from "@/lib/core";
+import { loginUser } from "@/lib/auth-server";
 import { sessionCookieName } from "@/lib/constants";
 
 export async function POST(request: Request) {
-  const payload = loginSchema.safeParse(await request.json());
+  const result = await loginUser(await request.json());
 
-  await wait(500);
-
-  if (!payload.success) {
-    return NextResponse.json(
-      { message: "Please enter a valid email and password." },
-      { status: 400 },
-    );
+  if (!("session" in result.body)) {
+    return NextResponse.json(result.body, { status: result.status });
   }
 
-  const { email, password } = payload.data;
+  const { session, userId } = result.body;
+  const response = NextResponse.json({ session }, { status: result.status });
 
-  if (email !== demoCredentials.email || password !== demoCredentials.password) {
-    return NextResponse.json(
-      { message: "Incorrect credentials. Try the demo account details." },
-      { status: 401 },
-    );
-  }
-
-  const session = createSession();
-  const response = NextResponse.json({ session });
-
-  response.cookies.set(sessionCookieName, mockUser.id, {
+  response.cookies.set(sessionCookieName, userId, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

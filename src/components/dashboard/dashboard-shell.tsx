@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { clearStoredSession, cn } from "@/lib/core";
 import { Dialog, Button } from "@/components/ui/primitives";
-import { logout } from "@/services/auth/client";
+import { logout } from "@/services/api/auth";
 import { dashboardNavigation } from "@/lib/constants";
 import type { User } from "@/types/auth";
 

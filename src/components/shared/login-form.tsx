@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { loginSchema, queryKeys, storeSession } from "@/lib/core";
-import { login } from "@/services/auth/client";
+import { login } from "@/services/api/auth";
 import {
   Button,
   Card,

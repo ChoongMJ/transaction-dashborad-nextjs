@@ -1,19 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { createSession, getServerSessionUser } from "@/data/mock-backend";
+import { getSessionPayload } from "@/lib/auth-server";
 
 export async function GET() {
-  const user = await getServerSessionUser();
-
-  if (!user) {
-    return NextResponse.json({ session: null });
-  }
-
-  return NextResponse.json({
-    session: {
-      ...createSession(),
-      user,
-      token: "server-session",
-    },
-  });
+  const result = await getSessionPayload();
+  return NextResponse.json(result.body, { status: result.status });
 }

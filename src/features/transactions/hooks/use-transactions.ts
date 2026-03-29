@@ -9,12 +9,12 @@ import {
 
 import { queryKeys } from "@/lib/core";
 import {
-  addTransactionNote,
-  fetchTransaction,
-  fetchTransactionOverview,
-  fetchTransactions,
+  createTransactionNote,
+  getTransactionById,
+  getTransactions,
+  getTransactionsOverview,
   updateTransaction,
-} from "@/services/transactions/client";
+} from "@/services/api/transactions";
 import type {
   AddTransactionNotePayload,
   Transaction,
@@ -26,7 +26,7 @@ import type {
 export function useTransactions(params: TransactionListParams) {
   return useQuery({
     queryKey: queryKeys.transactions.list(params),
-    queryFn: () => fetchTransactions(params),
+    queryFn: () => getTransactions(params),
     placeholderData: keepPreviousData,
   });
 }
@@ -34,14 +34,14 @@ export function useTransactions(params: TransactionListParams) {
 export function useTransactionOverview() {
   return useQuery({
     queryKey: queryKeys.transactions.overview(),
-    queryFn: fetchTransactionOverview,
+    queryFn: getTransactionsOverview,
   });
 }
 
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: queryKeys.transactions.detail(id),
-    queryFn: async () => (await fetchTransaction(id)).data,
+    queryFn: async () => (await getTransactionById(id)).data,
     enabled: Boolean(id),
   });
 }
@@ -138,7 +138,7 @@ export function useAddTransactionNote(id: string) {
 
   return useMutation({
     mutationFn: (payload: AddTransactionNotePayload) =>
-      addTransactionNote(id, payload),
+      createTransactionNote(id, payload),
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.transactions.detail(id) });
 

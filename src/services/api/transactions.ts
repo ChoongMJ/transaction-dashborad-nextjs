@@ -11,19 +11,34 @@ import { apiRequest } from "@/services/api/client";
 function createQueryString(params: TransactionListParams) {
   const searchParams = new URLSearchParams();
 
-  if (params.page) searchParams.set("page", String(params.page));
-  if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
-  if (params.search) searchParams.set("search", params.search);
+  if (params.page) {
+    searchParams.set("page", String(params.page));
+  }
+
+  if (params.pageSize) {
+    searchParams.set("pageSize", String(params.pageSize));
+  }
+
+  if (params.search) {
+    searchParams.set("search", params.search);
+  }
+
   if (params.status && params.status !== "all") {
     searchParams.set("status", params.status);
   }
-  if (params.sortBy) searchParams.set("sortBy", params.sortBy);
-  if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+
+  if (params.sortBy) {
+    searchParams.set("sortBy", params.sortBy);
+  }
+
+  if (params.sortOrder) {
+    searchParams.set("sortOrder", params.sortOrder);
+  }
 
   return searchParams.toString();
 }
 
-export function fetchTransactions(params: TransactionListParams) {
+export function getTransactions(params: TransactionListParams) {
   const query = createQueryString(params);
 
   return apiRequest<TransactionsListResponse>(
@@ -31,11 +46,11 @@ export function fetchTransactions(params: TransactionListParams) {
   );
 }
 
-export function fetchTransactionOverview() {
+export function getTransactionsOverview() {
   return apiRequest<TransactionsOverviewResponse>("/api/transactions?view=overview");
 }
 
-export function fetchTransaction(id: string) {
+export function getTransactionById(id: string) {
   return apiRequest<{ data: Transaction }>(`/api/transactions/${id}`);
 }
 
@@ -46,7 +61,7 @@ export function updateTransaction(id: string, payload: UpdateTransactionPayload)
   });
 }
 
-export function addTransactionNote(
+export function createTransactionNote(
   id: string,
   payload: AddTransactionNotePayload,
 ) {
