@@ -98,3 +98,26 @@ export type UpdateTransactionPayload = {
 export type AddTransactionNotePayload = {
   message: string;
 };
+
+export type BulkUpdateTransactionsPayload = {
+  action: "update_status";
+  ids: string[];
+  status: TransactionStatus;
+};
+
+export type BulkDeleteTransactionsPayload = {
+  action: "delete";
+  ids: string[];
+};
+
+export type BulkTransactionPayload =
+  | BulkUpdateTransactionsPayload
+  | BulkDeleteTransactionsPayload;
+
+export type BulkTransactionActionResponse = {
+  data: {
+    action: BulkTransactionPayload["action"];
+    affectedIds: string[];
+    transactions: Transaction[];
+  };
+};

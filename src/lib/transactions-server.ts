@@ -1,12 +1,18 @@
 import {
   addTransactionNote,
+  bulkDeleteTransactions,
+  bulkUpdateTransactionStatus,
   getTransactionById,
   getTransactionsOverview,
   listTransactions,
   updateTransactionStatus,
   wait,
 } from "@/data/mock-backend";
-import { transactionNoteSchema, transactionStatusSchema } from "@/lib/core";
+import {
+  bulkTransactionActionSchema,
+  transactionNoteSchema,
+  transactionStatusSchema,
+} from "@/lib/core";
 import {
   transactionStatuses,
   type TransactionListParams,
@@ -149,5 +155,62 @@ export async function createTransactionNotePayload(
   return {
     status: 200,
     body: { data: transaction },
+  };
+}
+
+export async function bulkTransactionActionPayload(
+  payload: unknown,
+): Promise<
+  ServerResult<
+    | {
+        data: {
+          action: "update_status" | "delete";
+          affectedIds: string[];
+          transactions: ReturnType<typeof bulkUpdateTransactionStatus>;
+        };
+      }
+    | { message: string }
+  >
+> {
+  const parsedPayload = bulkTransactionActionSchema.safeParse(payload);
+
+  await wait(325);
+
+  if (!parsedPayload.success) {
+    return {
+      status: 400,
+      body: { message: "Select transactions and choose a valid bulk action." },
+    };
+  }
+
+  if (parsedPayload.data.action === "update_status") {
+    const transactions = bulkUpdateTransactionStatus(
+      parsedPayload.data.ids,
+      parsedPayload.data.status,
+    );
+
+    return {
+      status: 200,
+      body: {
+        data: {
+          action: "update_status",
+          affectedIds: parsedPayload.data.ids,
+          transactions,
+        },
+      },
+    };
+  }
+
+  const transactions = bulkDeleteTransactions(parsedPayload.data.ids);
+
+  return {
+    status: 200,
+    body: {
+      data: {
+        action: "delete",
+        affectedIds: parsedPayload.data.ids,
+        transactions,
+      },
+    },
   };
 }

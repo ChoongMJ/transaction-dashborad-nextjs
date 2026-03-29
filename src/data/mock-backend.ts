@@ -301,6 +301,53 @@ export function updateTransactionStatus(id: string, status: TransactionStatus) {
   return clone(transaction);
 }
 
+export function bulkUpdateTransactionStatus(
+  ids: string[],
+  status: TransactionStatus,
+) {
+  const updatedAt = new Date().toISOString();
+  const selectedIds = new Set(ids);
+  const updatedTransactions: Transaction[] = [];
+
+  for (const transaction of store) {
+    if (!selectedIds.has(transaction.id)) {
+      continue;
+    }
+
+    transaction.status = status;
+    transaction.updatedAt = updatedAt;
+    transaction.statusHistory.unshift({
+      id: crypto.randomUUID(),
+      status,
+      changedAt: updatedAt,
+      changedBy: "Operations Admin",
+      reason: "Bulk status update from dashboard",
+    });
+    updatedTransactions.push(clone(transaction));
+  }
+
+  return updatedTransactions;
+}
+
+export function bulkDeleteTransactions(ids: string[]) {
+  const selectedIds = new Set(ids);
+  const deletedTransactions = store
+    .filter((transaction) => selectedIds.has(transaction.id))
+    .map((transaction) => clone(transaction));
+
+  if (deletedTransactions.length === 0) {
+    return [];
+  }
+
+  const remainingTransactions = store.filter(
+    (transaction) => !selectedIds.has(transaction.id),
+  );
+
+  store.splice(0, store.length, ...remainingTransactions);
+
+  return deletedTransactions;
+}
+
 export function addTransactionNote(id: string, message: string) {
   const transaction = store.find((item) => item.id === id);
 

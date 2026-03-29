@@ -1,5 +1,7 @@
 import type {
   AddTransactionNotePayload,
+  BulkTransactionActionResponse,
+  BulkTransactionPayload,
   Transaction,
   TransactionListParams,
   TransactionsListResponse,
@@ -67,6 +69,13 @@ export function createTransactionNote(
 ) {
   return apiRequest<{ data: Transaction }>(`/api/transactions/${id}/notes`, {
     method: "POST",
+    body: payload,
+  });
+}
+
+export function bulkUpdateTransactions(payload: BulkTransactionPayload) {
+  return apiRequest<BulkTransactionActionResponse>("/api/transactions/bulk", {
+    method: "PATCH",
     body: payload,
   });
 }

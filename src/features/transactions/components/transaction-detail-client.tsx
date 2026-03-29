@@ -59,6 +59,7 @@ export function TransactionDetailClient({
         title="Transaction details couldn't be loaded"
         description="The record may have been removed or the backend is temporarily unavailable."
         onRetry={() => transactionQuery.refetch()}
+        isRetrying={transactionQuery.isFetching}
       />
     );
   }
@@ -187,6 +188,7 @@ export function TransactionDetailClient({
                   <Select
                     value={selectedStatus ?? transaction.status}
                     onValueChange={setSelectedStatus}
+                    disabled={statusMutation.isPending}
                     options={transactionStatusOptions
                       .filter((option) => option.value !== "all")
                       .map((option) => ({
@@ -213,6 +215,7 @@ export function TransactionDetailClient({
                   <Textarea
                     id="note"
                     placeholder="Add context for finance, support, or risk teammates."
+                    disabled={noteMutation.isPending}
                     {...noteForm.register("message")}
                   />
                 </div>

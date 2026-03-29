@@ -51,9 +51,16 @@ export function Button({
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
+  const isDisabled = Boolean(props.disabled || loading);
 
   return (
-    <Comp className={cn(buttonVariants({ variant, size, className }))} {...props}>
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={loading}
+      aria-disabled={isDisabled}
+      disabled={isDisabled}
+      {...props}
+    >
       {loading ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
       {children}
     </Comp>
@@ -96,6 +103,40 @@ export function Input({
     />
   );
 }
+
+export interface CheckboxProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
+  indeterminate?: boolean;
+}
+
+export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
+  function Checkbox(
+    { className, indeterminate = false, ...props },
+    forwardedRef,
+  ) {
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
+
+    React.useEffect(() => {
+      if (inputRef.current) {
+        inputRef.current.indeterminate = indeterminate;
+      }
+    }, [indeterminate]);
+
+    return (
+      <input
+        ref={inputRef}
+        type="checkbox"
+        className={cn(
+          "size-4 rounded border border-border bg-card text-primary shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
 
 export function Textarea({
   className,
@@ -183,18 +224,20 @@ export function Select({
   placeholder,
   options,
   className,
+  disabled = false,
 }: {
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
   options: Array<{ label: string; value: string }>;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
+    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectPrimitive.Trigger
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-foreground shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-card px-3 text-sm text-foreground shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60",
           className,
         )}
       >

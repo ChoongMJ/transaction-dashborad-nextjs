@@ -79,6 +79,22 @@ export const transactionNoteSchema = z.object({
     .max(280, "Notes should stay under 280 characters."),
 });
 
+const transactionIdsSchema = z
+  .array(z.string().trim().min(1))
+  .min(1, "Select at least one transaction.");
+
+export const bulkTransactionActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("update_status"),
+    ids: transactionIdsSchema,
+    status: z.enum(transactionStatuses),
+  }),
+  z.object({
+    action: z.literal("delete"),
+    ids: transactionIdsSchema,
+  }),
+]);
+
 export const queryKeys = {
   auth: {
     session: ["auth", "session"] as const,

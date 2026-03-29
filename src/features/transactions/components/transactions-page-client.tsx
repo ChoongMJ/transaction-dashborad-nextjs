@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpDown, RotateCcw } from "lucide-react";
+import { ArrowRight, ArrowUpDown, CheckCheck, RotateCcw, Trash2, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
@@ -9,12 +9,15 @@ import {
   EmptyState,
   ErrorState,
   FilterBar,
-  LoadingSkeleton,
   SearchInput,
+  TableSkeleton,
 } from "@/components/shared/common";
 import { Button, Card, CardContent, Select } from "@/components/ui/primitives";
 import { StatusBadge } from "@/features/transactions/components/status-badge";
-import { useTransactions } from "@/features/transactions/hooks/use-transactions";
+import {
+  useBulkTransactionAction,
+  useTransactions,
+} from "@/features/transactions/hooks/use-transactions";
 import { transactionStatusOptions } from "@/lib/constants";
 import { formatCurrency, formatDateTime } from "@/lib/core";
 import type { TransactionListParams, TransactionsListResponse } from "@/types/transaction";
@@ -72,9 +75,11 @@ function getOrderValue(rawValue: string | null): "asc" | "desc" {
 function TransactionsSearchField({
   initialSearch,
   onSearchChange,
+  disabled = false,
 }: {
   initialSearch: string;
   onSearchChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   const [value, setValue] = useState(initialSearch);
   const deferredValue = useDeferredValue(value);
@@ -85,7 +90,7 @@ function TransactionsSearchField({
     }
   }, [deferredValue, initialSearch, onSearchChange]);
 
-  return <SearchInput value={value} onChange={setValue} />;
+  return <SearchInput value={value} onChange={setValue} disabled={disabled} />;
 }
 
 export function TransactionsPageClient() {
@@ -99,6 +104,11 @@ export function TransactionsPageClient() {
   const sortOrder = getOrderValue(searchParams.get("order"));
 
   const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<Exclude<
+    NonNullable<TransactionListParams["status"]>,
+    "all"
+  >>("completed");
 
   function updateUrl(
     updates: Partial<Record<UrlParamKey, string | null>>,
@@ -138,6 +148,17 @@ export function TransactionsPageClient() {
   );
 
   const query = useTransactions(filters);
+  const bulkActionMutation = useBulkTransactionAction();
+  const isInitialLoading = query.isLoading && !query.data;
+  const isRefreshing = query.isFetching && Boolean(query.data);
+  const areControlsDisabled = query.isFetching || bulkActionMutation.isPending;
+  const selectedCount = selectedIds.length;
+  const isBulkStatusPending =
+    bulkActionMutation.isPending &&
+    bulkActionMutation.variables?.action === "update_status";
+  const isBulkDeletePending =
+    bulkActionMutation.isPending &&
+    bulkActionMutation.variables?.action === "delete";
 
   const columns = useMemo(
     () => [
@@ -201,6 +222,7 @@ export function TransactionsPageClient() {
   );
 
   function resetFilters() {
+    setSelectedIds([]);
     setPageSize(10);
     updateUrl({
       search: null,
@@ -211,13 +233,70 @@ export function TransactionsPageClient() {
     });
   }
 
+  function toggleRowSelection(id: string) {
+    setSelectedIds((current) =>
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id],
+    );
+  }
+
+  function toggleAllRows(ids: string[]) {
+    setSelectedIds((current) => {
+      const visibleIds = new Set(ids);
+      const areAllVisibleSelected =
+        ids.length > 0 && ids.every((id) => current.includes(id));
+
+      if (areAllVisibleSelected) {
+        return current.filter((id) => !visibleIds.has(id));
+      }
+
+      return Array.from(new Set([...current, ...ids]));
+    });
+  }
+
+  async function runBulkAction() {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    const payload = {
+      action: "update_status" as const,
+      ids: selectedIds,
+      status: bulkStatus,
+    };
+
+    await bulkActionMutation.mutateAsync(payload);
+    setSelectedIds((current) =>
+      current.filter((id) => !payload.ids.includes(id)),
+    );
+  }
+
+  async function deleteSelectedTransactions() {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    const payload = {
+      action: "delete" as const,
+      ids: selectedIds,
+    };
+
+    await bulkActionMutation.mutateAsync(payload);
+    setSelectedIds((current) =>
+      current.filter((id) => !payload.ids.includes(id)),
+    );
+  }
+
   return (
     <div className="space-y-4">
       <FilterBar>
         <TransactionsSearchField
           key={urlSearch}
           initialSearch={urlSearch}
+          disabled={areControlsDisabled}
           onSearchChange={(value) => {
+            setSelectedIds([]);
             updateUrl(
               {
                 search: value || null,
@@ -229,7 +308,9 @@ export function TransactionsPageClient() {
         />
         <Select
           value={status}
+          disabled={areControlsDisabled}
           onValueChange={(value) => {
+            setSelectedIds([]);
             updateUrl({
               status: value === "all" ? null : value,
               page: "1",
@@ -242,7 +323,9 @@ export function TransactionsPageClient() {
         />
         <Select
           value={sortBy}
+          disabled={areControlsDisabled}
           onValueChange={(value) => {
+            setSelectedIds([]);
             updateUrl({
               sort: value,
               page: "1",
@@ -253,7 +336,9 @@ export function TransactionsPageClient() {
         <div className="flex gap-2">
           <Select
             value={sortOrder}
+            disabled={areControlsDisabled}
             onValueChange={(value) => {
+              setSelectedIds([]);
               updateUrl({
                 order: value,
                 page: "1",
@@ -262,19 +347,25 @@ export function TransactionsPageClient() {
             options={sortOrderOptions}
             className="flex-1"
           />
-          <Button variant="outline" size="icon" onClick={resetFilters}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetFilters}
+            disabled={areControlsDisabled}
+          >
             <RotateCcw className="size-4" />
           </Button>
         </div>
       </FilterBar>
 
-      {query.isLoading ? <LoadingSkeleton rows={7} /> : null}
+      {isInitialLoading ? <TableSkeleton rows={7} columns={7} /> : null}
 
       {query.isError ? (
         <ErrorState
           title="Transactions couldn't be loaded"
           description="The transaction feed is temporarily unavailable. Retry the request to continue."
           onRetry={() => query.refetch()}
+          isRetrying={query.isFetching}
         />
       ) : null}
 
@@ -291,14 +382,77 @@ export function TransactionsPageClient() {
       ) : null}
 
       {query.data && query.data.data.length > 0 ? (
-        <Card>
+        <Card className="transition-[opacity,transform] duration-200">
           <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {selectedCount > 0
+                    ? `${selectedCount} selected`
+                    : "Select transactions to take bulk action"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Selections persist while you page through the current queue.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={bulkStatus}
+                  disabled={areControlsDisabled || selectedCount === 0}
+                  onValueChange={(value) =>
+                    setBulkStatus(
+                      value as Exclude<
+                        NonNullable<TransactionListParams["status"]>,
+                        "all"
+                      >,
+                    )
+                  }
+                  options={transactionStatusOptions
+                    .filter((option) => option.value !== "all")
+                    .map((option) => ({
+                      label: option.label,
+                      value: option.value,
+                    }))}
+                  className="min-w-[180px]"
+                />
+                <Button
+                  variant="secondary"
+                  disabled={selectedCount === 0 || areControlsDisabled}
+                  loading={isBulkStatusPending}
+                  onClick={() => void runBulkAction()}
+                >
+                  {!isBulkStatusPending ? <CheckCheck className="mr-2 size-4" /> : null}
+                  Update status
+                </Button>
+                <Button
+                  variant="danger"
+                  disabled={selectedCount === 0 || areControlsDisabled}
+                  loading={isBulkDeletePending}
+                  onClick={() => void deleteSelectedTransactions()}
+                >
+                  {!isBulkDeletePending ? <Trash2 className="mr-2 size-4" /> : null}
+                  Delete (mock)
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={selectedCount === 0 || areControlsDisabled}
+                  onClick={() => setSelectedIds([])}
+                >
+                  <X className="mr-2 size-4" />
+                  Clear
+                </Button>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Transactions</p>
                 <h2 className="text-xl font-semibold tracking-tight">
                   Searchable operations ledger
                 </h2>
+                <p className="mt-1 min-h-5 text-sm text-muted-foreground">
+                  {isRefreshing ? "Refreshing transaction results..." : "Explore operational activity with stable filters and quick drill-downs."}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -307,7 +461,9 @@ export function TransactionsPageClient() {
                 </span>
                 <Select
                   value={String(pageSize)}
+                  disabled={areControlsDisabled}
                   onValueChange={(value) => {
+                    setSelectedIds([]);
                     setPageSize(Number(value));
                     updateUrl({
                       page: "1",
@@ -323,6 +479,14 @@ export function TransactionsPageClient() {
               columns={columns}
               rows={query.data.data}
               rowHref={(row) => `/dashboard/transactions/${row.id}`}
+              className={isRefreshing ? "opacity-70" : "opacity-100"}
+              selection={{
+                selectedIds,
+                disabled: areControlsDisabled,
+                onToggleRow: (row) => toggleRowSelection(row.id),
+                onToggleAll: (rows) => toggleAllRows(rows.map((row) => row.id)),
+                getRowLabel: (row) => `Select ${row.id} for ${row.customerName}`,
+              }}
             />
 
             <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
@@ -344,7 +508,7 @@ export function TransactionsPageClient() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  disabled={query.data.meta.page <= 1}
+                  disabled={areControlsDisabled || query.data.meta.page <= 1}
                   onClick={() =>
                     updateUrl({
                       page: String(Math.max(1, query.data.meta.page - 1)),
@@ -355,7 +519,10 @@ export function TransactionsPageClient() {
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={query.data.meta.page >= query.data.meta.totalPages}
+                  disabled={
+                    areControlsDisabled ||
+                    query.data.meta.page >= query.data.meta.totalPages
+                  }
                   onClick={() =>
                     updateUrl({
                       page: String(
