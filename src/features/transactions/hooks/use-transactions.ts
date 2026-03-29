@@ -7,20 +7,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import {
-  clearStoredSession,
-  queryKeys,
-  readStoredSession,
-  storeSession,
-} from "@/app/core";
+import { queryKeys } from "@/lib/core";
 import {
   addTransactionNote,
   fetchTransaction,
   fetchTransactionOverview,
   fetchTransactions,
-  getSession,
   updateTransaction,
-} from "@/app/services";
+} from "@/services/transactions/client";
 import type {
   AddTransactionNotePayload,
   Transaction,
@@ -28,25 +22,6 @@ import type {
   TransactionsListResponse,
   UpdateTransactionPayload,
 } from "@/types/transaction";
-
-export function useSession() {
-  return useQuery({
-    queryKey: queryKeys.auth.session,
-    queryFn: async () => {
-      const response = await getSession();
-
-      if (response.session) {
-        storeSession(response.session);
-      } else {
-        clearStoredSession();
-      }
-
-      return response.session;
-    },
-    initialData: readStoredSession,
-    staleTime: 60_000,
-  });
-}
 
 export function useTransactions(params: TransactionListParams) {
   return useQuery({

@@ -12,19 +12,23 @@ import {
   formatDateTime,
   transactionNoteSchema,
   transactionStatusSchema,
-} from "@/app/core";
+} from "@/lib/core";
 import {
   useAddTransactionNote,
   useTransaction,
   useUpdateTransaction,
-} from "@/app/hooks";
+} from "@/features/transactions/hooks/use-transactions";
+import { ErrorState, LoadingSkeleton } from "@/components/shared/common";
 import {
-  ErrorState,
-  LoadingSkeleton,
-  StatusBadge,
-} from "@/app/shared-components";
-import { Button, Card, CardContent, Label, Select, Textarea } from "@/app/ui";
+  Button,
+  Card,
+  CardContent,
+  Label,
+  Select,
+  Textarea,
+} from "@/components/ui/primitives";
 import { transactionStatusOptions } from "@/lib/constants";
+import { StatusBadge } from "@/features/transactions/components/status-badge";
 
 type NoteFormValues = z.infer<typeof transactionNoteSchema>;
 
@@ -249,7 +253,7 @@ export function TransactionDetailClient({
                     >
                       <p className="text-sm leading-6">{note.message}</p>
                       <p className="mt-3 text-xs text-muted-foreground">
-                        {note.author} • {formatDateTime(note.createdAt)}
+                        {note.author} - {formatDateTime(note.createdAt)}
                       </p>
                     </div>
                   ))

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { createSession, demoCredentials, mockUser, wait } from "@/app/mock-backend";
-import { loginSchema } from "@/app/core";
+import { createSession, demoCredentials, mockUser, wait } from "@/data/mock-backend";
+import { loginSchema } from "@/lib/core";
 import { sessionCookieName } from "@/lib/constants";
 
 export async function POST(request: Request) {

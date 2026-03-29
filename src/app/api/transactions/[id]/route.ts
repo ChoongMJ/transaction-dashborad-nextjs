@@ -4,8 +4,8 @@ import {
   getTransactionById,
   updateTransactionStatus,
   wait,
-} from "@/app/mock-backend";
-import { transactionStatusSchema } from "@/app/core";
+} from "@/data/mock-backend";
+import { transactionStatusSchema } from "@/lib/core";
 
 export async function GET(
   _request: Request,

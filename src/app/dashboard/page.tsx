@@ -1,4 +1,4 @@
-import { DashboardOverviewClient } from "@/app/dashboard-overview-client";
+import { DashboardOverviewClient } from "@/components/dashboard/dashboard-overview-client";
 
 export const metadata = {
   title: "Overview",

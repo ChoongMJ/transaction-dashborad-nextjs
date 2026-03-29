@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LogOut, Menu, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import { clearStoredSession, cn } from "@/app/core";
-import { Dialog, Button } from "@/app/ui";
-import { logout } from "@/app/services";
+import { clearStoredSession, cn } from "@/lib/core";
+import { Dialog, Button } from "@/components/ui/primitives";
+import { logout } from "@/services/auth/client";
 import { dashboardNavigation } from "@/lib/constants";
 import type { User } from "@/types/auth";
 
@@ -17,15 +17,21 @@ function SidebarNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <nav className="space-y-2">
       {dashboardNavigation.map((item) => {
+        const isExceptionsItem = item.href.includes("status=failed");
         const active =
           item.href === "/dashboard"
             ? pathname === "/dashboard"
-            : pathname.startsWith("/dashboard/transactions") &&
-              item.href.startsWith("/dashboard/transactions");
+            : isExceptionsItem
+              ? pathname === "/dashboard/transactions" &&
+                searchParams.get("status") === "failed"
+              : pathname.startsWith("/dashboard/transactions") &&
+                !isExceptionsItem &&
+                searchParams.get("status") !== "failed";
 
         return (
           <Link

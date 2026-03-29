@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getTransactionsOverview, listTransactions, wait } from "@/app/mock-backend";
+import { getTransactionsOverview, listTransactions, wait } from "@/data/mock-backend";
 import {
   transactionStatuses,
   type TransactionListParams,

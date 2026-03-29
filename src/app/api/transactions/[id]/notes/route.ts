@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { addTransactionNote, wait } from "@/app/mock-backend";
-import { transactionNoteSchema } from "@/app/core";
+import { addTransactionNote, wait } from "@/data/mock-backend";
+import { transactionNoteSchema } from "@/lib/core";
 
 export async function POST(
   request: Request,

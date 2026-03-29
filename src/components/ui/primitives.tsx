@@ -4,15 +4,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import {
-  Check,
-  ChevronDown,
-  LoaderCircle,
-  X,
-} from "lucide-react";
+import { Check, ChevronDown, LoaderCircle, X } from "lucide-react";
 import * as React from "react";
 
-import { cn } from "@/app/core";
+import { cn } from "@/lib/core";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
@@ -20,10 +15,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        outline:
-          "border border-border bg-card text-foreground hover:bg-muted/60",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        outline: "border border-border bg-card text-foreground hover:bg-muted/60",
         ghost: "text-foreground hover:bg-muted/70",
         danger: "bg-danger text-white hover:bg-danger/90",
       },
@@ -149,11 +142,10 @@ const badgeVariants = cva(
   },
 );
 
-export function Badge({
-  className,
-  variant,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement> & VariantProps<typeof badgeVariants>) {
+export type BadgeProps = React.HTMLAttributes<HTMLSpanElement> &
+  VariantProps<typeof badgeVariants>;
+
+export function Badge({ className, variant, ...props }: BadgeProps) {
   return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 

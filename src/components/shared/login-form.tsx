@@ -7,9 +7,15 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { loginSchema, queryKeys, storeSession } from "@/app/core";
-import { login } from "@/app/services";
-import { Button, Card, CardContent, Input, Label } from "@/app/ui";
+import { loginSchema, queryKeys, storeSession } from "@/lib/core";
+import { login } from "@/services/auth/client";
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
+} from "@/components/ui/primitives";
 
 const demoCredentials = {
   email: "olivia@northstarops.com",

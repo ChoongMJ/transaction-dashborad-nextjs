@@ -1,8 +1,8 @@
 import { BarChart3, ShieldCheck, Sparkles } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { LoginForm } from "@/app/login-form";
-import { getServerSessionUser } from "@/app/mock-backend";
+import { LoginForm } from "@/components/shared/login-form";
+import { getServerSessionUser } from "@/data/mock-backend";
 
 export const metadata = {
   title: "Login",

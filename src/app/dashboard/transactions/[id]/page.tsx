@@ -1,4 +1,4 @@
-import { TransactionDetailClient } from "@/app/transaction-detail-client";
+import { TransactionDetailClient } from "@/features/transactions/components/transaction-detail-client";
 
 export const metadata = {
   title: "Transaction Detail",

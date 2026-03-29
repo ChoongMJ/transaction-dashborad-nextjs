@@ -3,8 +3,8 @@
 import { ArrowRight, ArrowUpDown, RotateCcw } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 
-import { formatCurrency, formatDateTime } from "@/app/core";
-import { useTransactions } from "@/app/hooks";
+import { formatCurrency, formatDateTime } from "@/lib/core";
+import { useTransactions } from "@/features/transactions/hooks/use-transactions";
 import {
   DataTable,
   EmptyState,
@@ -12,11 +12,11 @@ import {
   FilterBar,
   LoadingSkeleton,
   SearchInput,
-  StatusBadge,
-} from "@/app/shared-components";
-import { Button, Card, CardContent, Select } from "@/app/ui";
+} from "@/components/shared/common";
+import { Button, Card, CardContent, Select } from "@/components/ui/primitives";
 import { transactionStatusOptions } from "@/lib/constants";
 import type { TransactionListParams, TransactionsListResponse } from "@/types/transaction";
+import { StatusBadge } from "@/features/transactions/components/status-badge";
 
 const pageSizeOptions = [
   { label: "10 rows", value: "10" },

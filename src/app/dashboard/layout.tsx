@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { AppShell } from "@/app/dashboard-shell";
-import { getServerSessionUser } from "@/app/mock-backend";
+import { AppShell } from "@/components/dashboard/dashboard-shell";
+import { getServerSessionUser } from "@/data/mock-backend";
 
 export default async function DashboardLayout({
   children,

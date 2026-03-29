@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createSession, getServerSessionUser } from "@/app/mock-backend";
+import { createSession, getServerSessionUser } from "@/data/mock-backend";
 
 export async function GET() {
   const user = await getServerSessionUser();

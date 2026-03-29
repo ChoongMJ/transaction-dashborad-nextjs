@@ -1,5 +1,5 @@
 import type { TransactionListParams } from "@/types/transaction";
-import { TransactionsPageClient } from "@/app/transactions-page-client";
+import { TransactionsPageClient } from "@/features/transactions/components/transactions-page-client";
 
 export const metadata = {
   title: "Transactions",
@@ -23,5 +23,10 @@ export default async function TransactionsPage({
     sortOrder: params.sortOrder === "asc" ? "asc" : "desc",
   };
 
-  return <TransactionsPageClient initialParams={initialParams} />;
+  return (
+    <TransactionsPageClient
+      key={JSON.stringify(initialParams)}
+      initialParams={initialParams}
+    />
+  );
 }

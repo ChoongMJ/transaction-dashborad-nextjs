@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Search, ShieldAlert, Inbox, RefreshCcw } from "lucide-react";
+import { Inbox, RefreshCcw, Search, ShieldAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { cn, formatDateTime } from "@/app/core";
-import { Badge, Button, Card, CardContent, Input, Skeleton, Table, TableWrapper } from "@/app/ui";
-import { statusLabelMap } from "@/lib/constants";
-import type { Transaction, TransactionStatus } from "@/types/transaction";
+import { cn } from "@/lib/core";
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Skeleton,
+  Table,
+  TableWrapper,
+} from "@/components/ui/primitives";
 
 export function SearchInput({
   value,
@@ -29,19 +35,6 @@ export function SearchInput({
       />
     </div>
   );
-}
-
-export function StatusBadge({ status }: { status: TransactionStatus }) {
-  const variant =
-    status === "completed"
-      ? "success"
-      : status === "pending"
-        ? "warning"
-        : status === "failed"
-          ? "danger"
-          : "info";
-
-  return <Badge variant={variant}>{statusLabelMap[status]}</Badge>;
 }
 
 export function EmptyState({
@@ -183,18 +176,8 @@ export function DataTable<T extends { id: string }>({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
-            const rowContent = (
-              <>
-                {columns.map((column) => (
-                  <td key={column.key} className={cn("px-4 py-3 align-middle", column.className)}>
-                    {column.cell(row)}
-                  </td>
-                ))}
-              </>
-            );
-
-            return rowHref ? (
+          {rows.map((row) =>
+            rowHref ? (
               <tr
                 key={row.id}
                 className="border-t border-border/70 transition hover:bg-muted/30"
@@ -209,29 +192,16 @@ export function DataTable<T extends { id: string }>({
               </tr>
             ) : (
               <tr key={row.id} className="border-t border-border/70">
-                {rowContent}
+                {columns.map((column) => (
+                  <td key={column.key} className={cn("px-4 py-3 align-middle", column.className)}>
+                    {column.cell(row)}
+                  </td>
+                ))}
               </tr>
-            );
-          })}
+            ),
+          )}
         </tbody>
       </Table>
     </TableWrapper>
   );
-}
-
-export function TransactionTableColumns() {
-  return [
-    {
-      key: "id",
-      header: "Transaction",
-      cell: (transaction: Transaction) => (
-        <div>
-          <p className="font-semibold">{transaction.id}</p>
-          <p className="text-xs text-muted-foreground">
-            {formatDateTime(transaction.createdAt)}
-          </p>
-        </div>
-      ),
-    },
-  ];
 }

@@ -25,14 +25,14 @@ import {
   formatCurrency,
   formatRelativeTime,
   formatShortDate,
-} from "@/app/core";
-import { useTransactionOverview } from "@/app/hooks";
+} from "@/lib/core";
+import { useTransactionOverview } from "@/features/transactions/hooks/use-transactions";
 import {
   ErrorState,
   LoadingSkeleton,
-  StatusBadge,
-} from "@/app/shared-components";
-import { Badge, Card, CardContent } from "@/app/ui";
+} from "@/components/shared/common";
+import { Badge, Card, CardContent } from "@/components/ui/primitives";
+import { StatusBadge } from "@/features/transactions/components/status-badge";
 
 function StatCard({
   title,

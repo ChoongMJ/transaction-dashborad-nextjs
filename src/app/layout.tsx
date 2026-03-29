@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AppProviders } from "@/app/providers";
+import { AppProviders } from "@/providers/app-providers";
 import { appName } from "@/lib/constants";
 import "./globals.css";
 
