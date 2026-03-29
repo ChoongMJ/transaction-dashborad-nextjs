@@ -13,6 +13,7 @@ import {
   transactionNoteSchema,
   transactionStatusSchema,
 } from "@/lib/core";
+import { getAdminAccessPayload } from "@/lib/auth-server";
 import {
   transactionStatuses,
   type TransactionListParams,
@@ -98,6 +99,12 @@ export async function updateTransactionPayload(
     { data: NonNullable<ReturnType<typeof updateTransactionStatus>> } | { message: string }
   >
 > {
+  const accessError = await getAdminAccessPayload();
+
+  if (accessError) {
+    return accessError;
+  }
+
   const parsedPayload = transactionStatusSchema.safeParse(payload);
 
   await wait(300);
@@ -132,6 +139,12 @@ export async function createTransactionNotePayload(
     { data: NonNullable<ReturnType<typeof addTransactionNote>> } | { message: string }
   >
 > {
+  const accessError = await getAdminAccessPayload();
+
+  if (accessError) {
+    return accessError;
+  }
+
   const parsedPayload = transactionNoteSchema.safeParse(payload);
 
   await wait(250);
@@ -172,6 +185,12 @@ export async function bulkTransactionActionPayload(
     | { message: string }
   >
 > {
+  const accessError = await getAdminAccessPayload();
+
+  if (accessError) {
+    return accessError;
+  }
+
   const parsedPayload = bulkTransactionActionSchema.safeParse(payload);
 
   await wait(325);

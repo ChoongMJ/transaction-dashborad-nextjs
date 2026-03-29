@@ -20,6 +20,7 @@ import {
 } from "@/features/transactions/hooks/use-transactions";
 import { transactionStatusOptions } from "@/lib/constants";
 import { formatCurrency, formatDateTime } from "@/lib/core";
+import type { UserRole } from "@/types/auth";
 import type { TransactionListParams, TransactionsListResponse } from "@/types/transaction";
 
 const pageSizeOptions = [
@@ -93,9 +94,14 @@ function TransactionsSearchField({
   return <SearchInput value={value} onChange={setValue} disabled={disabled} />;
 }
 
-export function TransactionsPageClient() {
+export function TransactionsPageClient({
+  userRole,
+}: {
+  userRole: UserRole;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isViewer = userRole === "viewer";
 
   const urlSearch = searchParams.get("search") ?? "";
   const page = getPageValue(searchParams.get("page"));
@@ -384,65 +390,77 @@ export function TransactionsPageClient() {
       {query.data && query.data.data.length > 0 ? (
         <Card className="transition-[opacity,transform] duration-200">
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {selectedCount > 0
-                    ? `${selectedCount} selected`
-                    : "Select transactions to take bulk action"}
-                </p>
+            {!isViewer ? (
+              <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {selectedCount > 0
+                      ? `${selectedCount} selected`
+                      : "Select transactions to take bulk action"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Selections persist while you page through the current queue.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Select
+                    value={bulkStatus}
+                    disabled={areControlsDisabled || selectedCount === 0}
+                    onValueChange={(value) =>
+                      setBulkStatus(
+                        value as Exclude<
+                          NonNullable<TransactionListParams["status"]>,
+                          "all"
+                        >,
+                      )
+                    }
+                    options={transactionStatusOptions
+                      .filter((option) => option.value !== "all")
+                      .map((option) => ({
+                        label: option.label,
+                        value: option.value,
+                      }))}
+                    className="min-w-[180px]"
+                  />
+                  <Button
+                    variant="secondary"
+                    disabled={selectedCount === 0 || areControlsDisabled}
+                    loading={isBulkStatusPending}
+                    onClick={() => void runBulkAction()}
+                  >
+                    {!isBulkStatusPending ? (
+                      <CheckCheck className="mr-2 size-4" />
+                    ) : null}
+                    Update status
+                  </Button>
+                  <Button
+                    variant="danger"
+                    disabled={selectedCount === 0 || areControlsDisabled}
+                    loading={isBulkDeletePending}
+                    onClick={() => void deleteSelectedTransactions()}
+                  >
+                    {!isBulkDeletePending ? <Trash2 className="mr-2 size-4" /> : null}
+                    Delete (mock)
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={selectedCount === 0 || areControlsDisabled}
+                    onClick={() => setSelectedIds([])}
+                  >
+                    <X className="mr-2 size-4" />
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                <p className="text-sm font-medium text-foreground">Viewer access</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Selections persist while you page through the current queue.
+                  This account can review transactions, but status changes, notes, and
+                  bulk actions are disabled.
                 </p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Select
-                  value={bulkStatus}
-                  disabled={areControlsDisabled || selectedCount === 0}
-                  onValueChange={(value) =>
-                    setBulkStatus(
-                      value as Exclude<
-                        NonNullable<TransactionListParams["status"]>,
-                        "all"
-                      >,
-                    )
-                  }
-                  options={transactionStatusOptions
-                    .filter((option) => option.value !== "all")
-                    .map((option) => ({
-                      label: option.label,
-                      value: option.value,
-                    }))}
-                  className="min-w-[180px]"
-                />
-                <Button
-                  variant="secondary"
-                  disabled={selectedCount === 0 || areControlsDisabled}
-                  loading={isBulkStatusPending}
-                  onClick={() => void runBulkAction()}
-                >
-                  {!isBulkStatusPending ? <CheckCheck className="mr-2 size-4" /> : null}
-                  Update status
-                </Button>
-                <Button
-                  variant="danger"
-                  disabled={selectedCount === 0 || areControlsDisabled}
-                  loading={isBulkDeletePending}
-                  onClick={() => void deleteSelectedTransactions()}
-                >
-                  {!isBulkDeletePending ? <Trash2 className="mr-2 size-4" /> : null}
-                  Delete (mock)
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={selectedCount === 0 || areControlsDisabled}
-                  onClick={() => setSelectedIds([])}
-                >
-                  <X className="mr-2 size-4" />
-                  Clear
-                </Button>
-              </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -480,13 +498,19 @@ export function TransactionsPageClient() {
               rows={query.data.data}
               rowHref={(row) => `/dashboard/transactions/${row.id}`}
               className={isRefreshing ? "opacity-70" : "opacity-100"}
-              selection={{
-                selectedIds,
-                disabled: areControlsDisabled,
-                onToggleRow: (row) => toggleRowSelection(row.id),
-                onToggleAll: (rows) => toggleAllRows(rows.map((row) => row.id)),
-                getRowLabel: (row) => `Select ${row.id} for ${row.customerName}`,
-              }}
+              selection={
+                !isViewer
+                  ? {
+                      selectedIds,
+                      disabled: areControlsDisabled,
+                      onToggleRow: (row) => toggleRowSelection(row.id),
+                      onToggleAll: (rows) =>
+                        toggleAllRows(rows.map((row) => row.id)),
+                      getRowLabel: (row) =>
+                        `Select ${row.id} for ${row.customerName}`,
+                    }
+                  : undefined
+              }
             />
 
             <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">

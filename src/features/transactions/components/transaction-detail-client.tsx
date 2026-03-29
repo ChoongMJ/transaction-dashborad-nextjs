@@ -29,18 +29,22 @@ import {
 } from "@/components/ui/primitives";
 import { transactionStatusOptions } from "@/lib/constants";
 import { StatusBadge } from "@/features/transactions/components/status-badge";
+import type { UserRole } from "@/types/auth";
 
 type NoteFormValues = z.infer<typeof transactionNoteSchema>;
 
 export function TransactionDetailClient({
   transactionId,
+  userRole,
 }: {
   transactionId: string;
+  userRole: UserRole;
 }) {
   const transactionQuery = useTransaction(transactionId);
   const statusMutation = useUpdateTransaction(transactionId);
   const noteMutation = useAddTransactionNote(transactionId);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const isViewer = userRole === "viewer";
 
   const noteForm = useForm<NoteFormValues>({
     resolver: zodResolver(transactionNoteSchema),
@@ -175,67 +179,78 @@ export function TransactionDetailClient({
                   Update status or document context
                 </h3>
               </div>
-
-              <form
-                className="space-y-3"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void submitStatus();
-                }}
-              >
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={selectedStatus ?? transaction.status}
-                    onValueChange={setSelectedStatus}
-                    disabled={statusMutation.isPending}
-                    options={transactionStatusOptions
-                      .filter((option) => option.value !== "all")
-                      .map((option) => ({
-                        label: option.label,
-                        value: option.value,
-                      }))}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  loading={statusMutation.isPending}
-                >
-                  {!statusMutation.isPending ? (
-                    <RefreshCw className="mr-2 size-4" />
-                  ) : null}
-                  Save status update
-                </Button>
-              </form>
-
-              <form className="space-y-3" onSubmit={submitNote}>
-                <div className="space-y-2">
-                  <Label htmlFor="note">Internal note</Label>
-                  <Textarea
-                    id="note"
-                    placeholder="Add context for finance, support, or risk teammates."
-                    disabled={noteMutation.isPending}
-                    {...noteForm.register("message")}
-                  />
-                </div>
-                {noteForm.formState.errors.message ? (
-                  <p className="text-sm text-danger">
-                    {noteForm.formState.errors.message.message}
+              {isViewer ? (
+                <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                  <p className="text-sm font-medium text-foreground">Read-only access</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Viewer accounts can inspect notes, payment history, and status
+                    changes, but only admins can update transactions.
                   </p>
-                ) : null}
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  className="w-full"
-                  loading={noteMutation.isPending}
-                >
-                  {!noteMutation.isPending ? (
-                    <NotebookPen className="mr-2 size-4" />
-                  ) : null}
-                  Add internal note
-                </Button>
-              </form>
+                </div>
+              ) : (
+                <>
+                  <form
+                    className="space-y-3"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void submitStatus();
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={selectedStatus ?? transaction.status}
+                        onValueChange={setSelectedStatus}
+                        disabled={statusMutation.isPending}
+                        options={transactionStatusOptions
+                          .filter((option) => option.value !== "all")
+                          .map((option) => ({
+                            label: option.label,
+                            value: option.value,
+                          }))}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      loading={statusMutation.isPending}
+                    >
+                      {!statusMutation.isPending ? (
+                        <RefreshCw className="mr-2 size-4" />
+                      ) : null}
+                      Save status update
+                    </Button>
+                  </form>
+
+                  <form className="space-y-3" onSubmit={submitNote}>
+                    <div className="space-y-2">
+                      <Label htmlFor="note">Internal note</Label>
+                      <Textarea
+                        id="note"
+                        placeholder="Add context for finance, support, or risk teammates."
+                        disabled={noteMutation.isPending}
+                        {...noteForm.register("message")}
+                      />
+                    </div>
+                    {noteForm.formState.errors.message ? (
+                      <p className="text-sm text-danger">
+                        {noteForm.formState.errors.message.message}
+                      </p>
+                    ) : null}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full"
+                      loading={noteMutation.isPending}
+                    >
+                      {!noteMutation.isPending ? (
+                        <NotebookPen className="mr-2 size-4" />
+                      ) : null}
+                      Add internal note
+                    </Button>
+                  </form>
+                </>
+              )}
             </CardContent>
           </Card>
 

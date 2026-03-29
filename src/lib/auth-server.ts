@@ -1,8 +1,7 @@
 import {
   createSession,
-  demoCredentials,
+  demoAccounts,
   getServerSessionUser,
-  mockUser,
   wait,
 } from "@/data/mock-backend";
 import { loginSchema } from "@/lib/core";
@@ -11,6 +10,28 @@ type ServerResult<T> = {
   status: number;
   body: T;
 };
+
+export async function getAdminAccessPayload(): Promise<
+  ServerResult<{ message: string }> | null
+> {
+  const user = await getServerSessionUser();
+
+  if (!user) {
+    return {
+      status: 401,
+      body: { message: "Sign in to continue." },
+    };
+  }
+
+  if (user.role !== "admin") {
+    return {
+      status: 403,
+      body: { message: "Viewer accounts have read-only access." },
+    };
+  }
+
+  return null;
+}
 
 export async function loginUser(
   payload: unknown,
@@ -33,18 +54,22 @@ export async function loginUser(
 
   const { email, password } = parsedPayload.data;
 
-  if (email !== demoCredentials.email || password !== demoCredentials.password) {
+  const matchedAccount = demoAccounts.find(
+    (account) => account.email === email && account.password === password,
+  );
+
+  if (!matchedAccount) {
     return {
       status: 401,
-      body: { message: "Incorrect credentials. Try the demo account details." },
+      body: { message: "Incorrect credentials. Try one of the demo account details." },
     };
   }
 
   return {
     status: 200,
     body: {
-      session: createSession(),
-      userId: mockUser.id,
+      session: createSession(matchedAccount.user),
+      userId: matchedAccount.user.id,
     },
   };
 }
@@ -62,13 +87,12 @@ export async function getSessionPayload(): Promise<
   }
 
   return {
-    status: 200,
-    body: {
-      session: {
-        ...createSession(),
-        user,
-        token: "server-session",
+      status: 200,
+      body: {
+        session: {
+          ...createSession(user),
+          token: "server-session",
+        },
       },
-    },
-  };
+    };
 }

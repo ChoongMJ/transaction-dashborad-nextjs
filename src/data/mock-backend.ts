@@ -12,17 +12,34 @@ import type {
   TransactionsOverviewResponse,
 } from "@/types/transaction";
 
-export const demoCredentials = {
-  email: "olivia@northstarops.com",
-  password: "admin12345",
-};
+export const demoAccounts: Array<{
+  email: string;
+  password: string;
+  user: User;
+}> = [
+  {
+    email: "olivia@northstarops.com",
+    password: "admin12345",
+    user: {
+      id: "usr_ops_admin_001",
+      name: "Olivia Hart",
+      email: "olivia@northstarops.com",
+      role: "admin",
+    },
+  },
+  {
+    email: "liam.viewer@northstarops.com",
+    password: "viewer12345",
+    user: {
+      id: "usr_ops_viewer_001",
+      name: "Liam Brooks",
+      email: "liam.viewer@northstarops.com",
+      role: "viewer",
+    },
+  },
+];
 
-export const mockUser: User = {
-  id: "usr_ops_001",
-  name: "Olivia Hart",
-  email: demoCredentials.email,
-  role: "operations_manager",
-};
+export const demoCredentials = demoAccounts[0];
 
 const customers = [
   ["Maya Patel", "maya.patel@aurora-retail.com"],
@@ -205,17 +222,15 @@ export async function getServerSessionUser() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(sessionCookieName);
 
-  if (sessionCookie?.value !== mockUser.id) {
-    return null;
-  }
-
-  return mockUser;
+  return (
+    demoAccounts.find((account) => account.user.id === sessionCookie?.value)?.user ?? null
+  );
 }
 
-export function createSession(): Session {
+export function createSession(user: User): Session {
   return {
     token: crypto.randomUUID(),
-    user: mockUser,
+    user,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   };
 }

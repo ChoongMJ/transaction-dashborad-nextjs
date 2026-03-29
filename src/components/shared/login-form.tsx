@@ -17,10 +17,18 @@ import {
   Label,
 } from "@/components/ui/primitives";
 
-const demoCredentials = {
-  email: "olivia@northstarops.com",
-  password: "admin12345",
-};
+const demoAccounts = [
+  {
+    label: "Admin",
+    email: "olivia@northstarops.com",
+    password: "admin12345",
+  },
+  {
+    label: "Viewer",
+    email: "liam.viewer@northstarops.com",
+    password: "viewer12345",
+  },
+] as const;
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
@@ -35,8 +43,8 @@ export function LoginForm() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: demoCredentials.email,
-      password: demoCredentials.password,
+      email: demoAccounts[0].email,
+      password: demoAccounts[0].password,
     },
   });
 
@@ -73,9 +81,18 @@ export function LoginForm() {
         </div>
 
         <div className="rounded-2xl bg-secondary p-4 text-sm text-secondary-foreground">
-          <p className="font-semibold">Demo account</p>
-          <p className="mt-2 font-mono">{demoCredentials.email}</p>
-          <p className="font-mono">{demoCredentials.password}</p>
+          <p className="font-semibold">Demo accounts</p>
+          <div className="mt-3 space-y-3">
+            {demoAccounts.map((account) => (
+              <div key={account.email} className="rounded-xl bg-white/40 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+                  {account.label}
+                </p>
+                <p className="mt-2 font-mono">{account.email}</p>
+                <p className="font-mono">{account.password}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
