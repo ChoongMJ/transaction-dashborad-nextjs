@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Transaction Management Dashboard
+
+A production-style admin dashboard built with Next.js App Router, TypeScript, Tailwind CSS, shadcn-style UI primitives, TanStack Query, Recharts, React Hook Form, and Zod.
+
+## Features
+
+- Mock authentication flow with protected dashboard routes
+- Dashboard overview with KPI cards, recent activity, and charts
+- Searchable, filterable, sortable transaction list with pagination
+- Dynamic transaction detail page with status updates and internal notes
+- Lightweight mock backend powered by Next.js route handlers
+- Responsive desktop and tablet layout with collapsible mobile navigation
+
+## Tech Stack
+
+- Next.js 16 App Router
+- React 19 + TypeScript
+- Tailwind CSS 4
+- shadcn/ui-style component architecture
+- TanStack Query
+- Recharts
+- React Hook Form + Zod
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Email: `olivia@northstarops.com`
+- Password: `admin12345`
 
-## Learn More
+## Available Routes
 
-To learn more about Next.js, take a look at the following resources:
+- `/login`
+- `/dashboard`
+- `/dashboard/transactions`
+- `/dashboard/transactions/[id]`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Mock API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/session`
+- `GET /api/transactions`
+- `GET /api/transactions/[id]`
+- `PATCH /api/transactions/[id]`
+- `POST /api/transactions/[id]/notes`
 
-## Deploy on Vercel
+## Project Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- The mock backend uses an in-memory transaction store seeded from local mock data.
+- Authentication is simulated with a secure cookie plus client-side session storage.
+- TanStack Query handles server-state fetching, caching, and mutation flows.
